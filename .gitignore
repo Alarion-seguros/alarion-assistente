@@ -1,0 +1,20 @@
+# Dependências Node.js
+node_modules/
+automacao/lembretes/node_modules/
+
+# Ficheiros de lock (gerados automaticamente)
+package-lock.json
+automacao/lembretes/package-lock.json
+
+# Ficheiros de log
+*.log
+logs/
+
+# Variáveis de ambiente
+.env
+.env.*
+!.env.example
+
+# Ficheiros de sistema
+.DS_Store
+Thumbs.db
