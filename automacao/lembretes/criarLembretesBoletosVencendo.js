@@ -8,12 +8,22 @@
  *   Este módulo executa a verificação de boletos não pagos que vencem
  *   exatamente em 7 dias e cria lembretes automáticos para cada um deles,
  *   evitando duplicatas. Retorna estatísticas de execução ao final.
+ *
+ * Variáveis de ambiente:
+ *   TRPC_BASE_URL        — URL base da API tRPC (padrão: http://localhost:3000/api/trpc)
+ *   TRPC_INTERNAL_TOKEN  — Token de autenticação interno (obrigatório em produção)
+ *   TRPC_TIMEOUT_MS      — Timeout em ms para chamadas à API (padrão: 30000)
+ *   LOG_DIR              — Diretório para ficheiros de log (padrão: ./logs)
+ *   MAX_RETRIES          — Número máximo de tentativas em caso de falha (padrão: 3)
+ *   RETRY_DELAY_MS       — Atraso base entre tentativas em ms (padrão: 5000)
  */
 
 'use strict';
 
 const https = require('https');
-const http = require('http');
+const http  = require('http');
+const fs    = require('fs');
+const path  = require('path');
 
 // ─── Configuração ────────────────────────────────────────────────────────────
 
@@ -35,9 +45,44 @@ const CONFIG = {
    * Tempo máximo de espera por resposta da API (em milissegundos).
    */
   timeoutMs: parseInt(process.env.TRPC_TIMEOUT_MS || '30000', 10),
+
+  /**
+   * Diretório onde os ficheiros de log serão gravados.
+   */
+  logDir: process.env.LOG_DIR || path.join(__dirname, 'logs'),
+
+  /**
+   * Número máximo de tentativas em caso de falha transitória.
+   */
+  maxRetries: parseInt(process.env.MAX_RETRIES || '3', 10),
+
+  /**
+   * Atraso base entre tentativas (em ms). Cada tentativa multiplica este
+   * valor pelo número da tentativa (backoff linear crescente).
+   */
+  retryDelayMs: parseInt(process.env.RETRY_DELAY_MS || '5000', 10),
 };
 
-// ─── Utilitários ─────────────────────────────────────────────────────────────
+// ─── Logging ──────────────────────────────────────────────────────────────────
+
+/**
+ * Garante que o diretório de logs existe, criando-o se necessário.
+ */
+function garantirDiretorioLog() {
+  if (!fs.existsSync(CONFIG.logDir)) {
+    fs.mkdirSync(CONFIG.logDir, { recursive: true });
+  }
+}
+
+/**
+ * Retorna o caminho do ficheiro de log do dia atual.
+ * Formato: logs/lembretes-YYYY-MM-DD.log
+ * @returns {string}
+ */
+function caminhoLogDiario() {
+  const hoje = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  return path.join(CONFIG.logDir, `lembretes-${hoje}.log`);
+}
 
 /**
  * Formata a data e hora atual no padrão brasileiro para uso nos logs.
@@ -49,11 +94,59 @@ function agora() {
 
 /**
  * Emite uma linha de log com timestamp, nível e mensagem.
+ * Escreve simultaneamente em stdout e no ficheiro de log diário.
+ *
  * @param {'INFO'|'AVISO'|'ERRO'} nivel - Nível de severidade do log.
  * @param {string} mensagem - Texto da mensagem.
  */
 function log(nivel, mensagem) {
-  console.log(`[${agora()}] [${nivel}] ${mensagem}`);
+  const linha = `[${agora()}] [${nivel}] ${mensagem}`;
+  console.log(linha);
+  try {
+    garantirDiretorioLog();
+    fs.appendFileSync(caminhoLogDiario(), linha + '\n', 'utf8');
+  } catch (e) {
+    // Falha ao gravar log em ficheiro não deve interromper a execução
+    console.error(`[AVISO] Não foi possível gravar log em ficheiro: ${e.message}`);
+  }
+}
+
+// ─── Utilitários de Retry ─────────────────────────────────────────────────────
+
+/**
+ * Aguarda um determinado número de milissegundos.
+ * @param {number} ms - Tempo de espera em milissegundos.
+ * @returns {Promise<void>}
+ */
+function aguardar(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Executa uma função assíncrona com retry e backoff linear crescente.
+ *
+ * @param {Function} fn - Função assíncrona a executar.
+ * @param {number} maxTentativas - Número máximo de tentativas.
+ * @param {number} atrasoBaseMs - Atraso base entre tentativas (em ms).
+ * @returns {Promise<any>} Resultado da função em caso de sucesso.
+ * @throws {Error} Lança o último erro após esgotar todas as tentativas.
+ */
+async function comRetry(fn, maxTentativas, atrasoBaseMs) {
+  let ultimoErro;
+  for (let tentativa = 1; tentativa <= maxTentativas; tentativa++) {
+    try {
+      return await fn();
+    } catch (erro) {
+      ultimoErro = erro;
+      if (tentativa < maxTentativas) {
+        const atraso = atrasoBaseMs * tentativa; // backoff linear crescente
+        log('AVISO', `Tentativa ${tentativa}/${maxTentativas} falhou: ${erro.message}`);
+        log('AVISO', `Aguardando ${atraso}ms antes da próxima tentativa...`);
+        await aguardar(atraso);
+      }
+    }
+  }
+  throw ultimoErro;
 }
 
 // ─── Chamada tRPC ─────────────────────────────────────────────────────────────
@@ -148,13 +241,16 @@ function chamarTrpc(procedure, input = {}) {
 async function executarTarefa() {
   log('INFO', '='.repeat(60));
   log('INFO', 'Iniciando tarefa: Lembretes de Boletos Vencendo em 7 Dias');
+  log('INFO', `Configuração: maxRetries=${CONFIG.maxRetries}, retryDelayMs=${CONFIG.retryDelayMs}ms`);
   log('INFO', '='.repeat(60));
 
   try {
     log('INFO', 'Chamando procedure: trpc.lembretes.criarLembretesBoletosVencendo');
 
-    const estatisticas = await chamarTrpc(
-      'lembretes.criarLembretesBoletosVencendo'
+    const estatisticas = await comRetry(
+      () => chamarTrpc('lembretes.criarLembretesBoletosVencendo'),
+      CONFIG.maxRetries,
+      CONFIG.retryDelayMs
     );
 
     log('INFO', '-'.repeat(60));
@@ -169,7 +265,7 @@ async function executarTarefa() {
 
     process.exit(0);
   } catch (erro) {
-    log('ERRO', `Falha na execução da tarefa: ${erro.message}`);
+    log('ERRO', `Falha na execução da tarefa após ${CONFIG.maxRetries} tentativas: ${erro.message}`);
     log('ERRO', 'A tarefa será reexecutada no próximo ciclo agendado (08:00).');
     process.exit(1);
   }

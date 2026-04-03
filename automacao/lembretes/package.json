@@ -1,10 +1,10 @@
 {
   "name": "alarion-lembretes-scheduler",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Agendador de lembretes automáticos para boletos vencendo em 7 dias — Alarion Seguros",
   "main": "scheduler.js",
   "scripts": {
-    "start": "node scheduler.js",
+    "start"   : "node scheduler.js",
     "run-once": "node criarLembretesBoletosVencendo.js"
   },
   "dependencies": {

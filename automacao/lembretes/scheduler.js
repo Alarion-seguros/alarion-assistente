@@ -12,13 +12,40 @@
  *   TRPC_BASE_URL        — URL base da API tRPC (obrigatória em produção)
  *   TRPC_INTERNAL_TOKEN  — Token de autenticação interno (obrigatório em produção)
  *   TRPC_TIMEOUT_MS      — Timeout em ms para chamadas à API (padrão: 30000)
+ *   LOG_DIR              — Diretório para ficheiros de log (padrão: ./logs)
+ *   MAX_RETRIES          — Número máximo de tentativas em caso de falha (padrão: 3)
+ *   RETRY_DELAY_MS       — Atraso base entre tentativas em ms (padrão: 5000)
  */
 
 'use strict';
 
-const cron = require('node-cron');
+const cron         = require('node-cron');
 const { execFile } = require('child_process');
-const path = require('path');
+const path         = require('path');
+const fs           = require('fs');
+
+// ─── Configuração de Logging ─────────────────────────────────────────────────────────
+
+const LOG_DIR = process.env.LOG_DIR || path.join(__dirname, 'logs');
+
+/**
+ * Garante que o diretório de logs existe, criando-o se necessário.
+ */
+function garantirDiretorioLog() {
+  if (!fs.existsSync(LOG_DIR)) {
+    fs.mkdirSync(LOG_DIR, { recursive: true });
+  }
+}
+
+/**
+ * Retorna o caminho do ficheiro de log do agendador para o dia atual.
+ * Formato: logs/scheduler-YYYY-MM-DD.log
+ * @returns {string}
+ */
+function caminhoLogScheduler() {
+  const hoje = new Date().toISOString().slice(0, 10);
+  return path.join(LOG_DIR, `scheduler-${hoje}.log`);
+}
 
 // ─── Utilitários ─────────────────────────────────────────────────────────────
 
@@ -32,11 +59,20 @@ function agora() {
 
 /**
  * Emite uma linha de log com timestamp, nível e mensagem.
+ * Escreve simultaneamente em stdout e no ficheiro de log diário do agendador.
+ *
  * @param {'INFO'|'AVISO'|'ERRO'} nivel - Nível de severidade do log.
  * @param {string} mensagem - Texto da mensagem.
  */
 function log(nivel, mensagem) {
-  console.log(`[${agora()}] [${nivel}] ${mensagem}`);
+  const linha = `[${agora()}] [${nivel}] ${mensagem}`;
+  console.log(linha);
+  try {
+    garantirDiretorioLog();
+    fs.appendFileSync(caminhoLogScheduler(), linha + '\n', 'utf8');
+  } catch (e) {
+    console.error(`[AVISO] Não foi possível gravar log em ficheiro: ${e.message}`);
+  }
 }
 
 // ─── Caminho do script de tarefa ──────────────────────────────────────────────
@@ -56,12 +92,18 @@ function dispararTarefa() {
   log('INFO', `Script: ${SCRIPT_TAREFA}`);
   log('INFO', '='.repeat(60));
 
+  // Calcula o timeout total considerando retries: (timeout + delay_por_retry) * max_retries + margem
+  const timeoutMs    = parseInt(process.env.TRPC_TIMEOUT_MS  || '30000', 10);
+  const maxRetries   = parseInt(process.env.MAX_RETRIES      || '3',     10);
+  const retryDelayMs = parseInt(process.env.RETRY_DELAY_MS   || '5000',  10);
+  const timeoutTotal = (timeoutMs + retryDelayMs * maxRetries) * maxRetries + 10000;
+
   execFile(
     process.execPath, // caminho do binário node em uso
     [SCRIPT_TAREFA],
     {
-      env: process.env,
-      timeout: parseInt(process.env.TRPC_TIMEOUT_MS || '30000', 10) + 5000,
+      env    : process.env,
+      timeout: timeoutTotal,
     },
     (erro, stdout, stderr) => {
       if (stdout) {
@@ -115,8 +157,11 @@ log('INFO', 'Tarefa registada: criarLembretesBoletosVencendo');
 log('INFO', 'Expressão cron  : 0 8 * * *');
 log('INFO', 'Fuso horário    : America/Sao_Paulo (UTC-3)');
 log('INFO', 'Próxima execução: diariamente às 08:00 (horário de Brasília)');
-log('INFO', `TRPC_BASE_URL   : ${process.env.TRPC_BASE_URL || '(não definida — usando padrão)'}`);
+log('INFO', `TRPC_BASE_URL      : ${process.env.TRPC_BASE_URL || '(não definida — usando padrão)'}`);
 log('INFO', `TRPC_INTERNAL_TOKEN: ${process.env.TRPC_INTERNAL_TOKEN ? '***configurado***' : '(não definida)'}`);
+log('INFO', `MAX_RETRIES        : ${process.env.MAX_RETRIES || '3 (padrão)'}`);
+log('INFO', `RETRY_DELAY_MS     : ${process.env.RETRY_DELAY_MS || '5000ms (padrão)'}`);
+log('INFO', `LOG_DIR            : ${process.env.LOG_DIR || path.join(__dirname, 'logs') + ' (padrão)'}`);
 log('INFO', '='.repeat(60));
 log('INFO', 'Agendador em execução. Aguardando próximo ciclo...');
 
