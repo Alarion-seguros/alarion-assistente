@@ -1,7 +1,8 @@
 # Relatório de Implementação: Tarefa Agendada para Lembretes de Boletos
 
 **Autor:** Manus AI
-**Data:** 04 de Abril de 2026
+**Data:** 05 de Abril de 2026
+**Revisão:** 2.0 — Alinhamento com playbook de automação
 
 ## Resumo Executivo
 
@@ -25,9 +26,10 @@ A solução foi estruturada de forma modular no diretório `automacao/lembretes/
    - Retorna estatísticas de execução (boletos verificados, lembretes criados e duplicatas ignoradas).
 
 3. **Configuração e Documentação**
-   - `cron.config.json`: Mantém a definição declarativa da tarefa.
+   - `cron.config.json`: Mantém a definição declarativa da tarefa agendada.
    - `.env.example`: Modelo de variáveis de ambiente para facilitar a configuração em novos ambientes.
    - `README.md`: Fornece instruções claras sobre como configurar, executar e monitorizar o agendador em diferentes ambientes (PM2, systemd, crontab).
+   - `backend_implementation_guide.md`: Guia completo para implementação da procedure tRPC no backend com exemplos em TypeScript e Prisma.
 
 ## Requisitos Atendidos
 
@@ -41,6 +43,7 @@ A solução foi estruturada de forma modular no diretório `automacao/lembretes/
 | Retry com backoff em caso de falha | O script realiza até `MAX_RETRIES` tentativas com atraso linear crescente antes de encerrar com erro. | Concluído |
 | Logging persistente em ficheiro | Logs gravados diariamente em `logs/lembretes-YYYY-MM-DD.log` e `logs/scheduler-YYYY-MM-DD.log`. | Concluído |
 | Modelo de variáveis de ambiente | Ficheiro `.env.example` com todas as variáveis documentadas e valores padrão. | Concluído |
+| Guia de implementação backend | Ficheiro `backend_implementation_guide.md` com exemplo completo em TypeScript + Prisma + tRPC. | Concluído |
 
 ## Fluxo de Execução
 
@@ -61,6 +64,30 @@ scheduler.js (processo contínuo)
             │
             └── Regista estatísticas em log → exit(0) ou exit(1)
 ```
+
+## Estrutura de Ficheiros
+
+```
+automacao/lembretes/
+├── scheduler.js                      # Processo de longa duração (node-cron)
+├── criarLembretesBoletosVencendo.js  # Script da tarefa — chamada tRPC
+├── cron.config.json                  # Configuração declarativa do agendamento
+├── package.json                      # Dependências Node.js (node-cron ^3.0.3)
+├── .env.example                      # Modelo de variáveis de ambiente
+├── README.md                         # Documentação e instruções de implantação
+└── backend_implementation_guide.md   # Guia de implementação backend (TypeScript + Prisma)
+```
+
+## Variáveis de Ambiente
+
+| Variável | Obrigatória | Padrão | Descrição |
+|---|---|---|---|
+| `TRPC_BASE_URL` | Sim | `http://localhost:3000/api/trpc` | URL base da API tRPC |
+| `TRPC_INTERNAL_TOKEN` | Sim (produção) | — | Token de autenticação interno |
+| `TRPC_TIMEOUT_MS` | Não | `30000` | Timeout em ms para chamadas à API |
+| `MAX_RETRIES` | Não | `3` | Número máximo de tentativas em caso de falha |
+| `RETRY_DELAY_MS` | Não | `5000` | Atraso base entre tentativas (backoff linear) |
+| `LOG_DIR` | Não | `./logs` | Diretório para ficheiros de log |
 
 ## Considerações Adicionais: Notificações Mensais Recorrentes
 
