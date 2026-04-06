@@ -1,8 +1,8 @@
 # Relatório de Implementação: Tarefa Agendada para Lembretes de Boletos
 
 **Autor:** Manus AI
-**Data:** 05 de Abril de 2026
-**Revisão:** 2.0 — Alinhamento com playbook de automação
+**Data:** 06 de Abril de 2026
+**Revisão:** 3.0 — Verificação de conformidade com playbook de automação
 
 ## Resumo Executivo
 
@@ -31,19 +31,17 @@ A solução foi estruturada de forma modular no diretório `automacao/lembretes/
    - `README.md`: Fornece instruções claras sobre como configurar, executar e monitorizar o agendador em diferentes ambientes (PM2, systemd, crontab).
    - `backend_implementation_guide.md`: Guia completo para implementação da procedure tRPC no backend com exemplos em TypeScript e Prisma.
 
-## Requisitos Atendidos
+## Requisitos do Playbook Atendidos
 
-| Requisito | Implementação | Status |
-|-----------|---------------|--------|
-| Verificação de boletos a vencer em 7 dias | A procedure tRPC encapsula a lógica de negócio para filtrar os boletos não pagos com vencimento exato em 7 dias. | Concluído |
-| Criação de lembretes automáticos | A procedure cria um novo lembrete com o título "Boleto [número] vence em 7 dias", incluindo informações do cliente e valor. | Concluído |
-| Prevenção de duplicatas | A procedure verifica a existência prévia de um lembrete antes de criar um novo. | Concluído |
+| Requisito do Playbook | Implementação | Status |
+|---|---|---|
+| Buscar todos os boletos não pagos que vencem exatamente em 7 dias | A procedure tRPC encapsula a lógica de negócio para filtrar os boletos não pagos com vencimento exato em 7 dias. | Concluído |
+| Verificar se já existe um lembrete criado para cada boleto | A procedure verifica a existência prévia de um lembrete antes de criar um novo, prevenindo duplicatas. | Concluído |
+| Criar lembrete com título "Boleto [número] vence em 7 dias" | A procedure cria o lembrete com o título exato especificado no playbook, incluindo o número do boleto. | Concluído |
+| Incluir informações do cliente, valor e data de vencimento | O lembrete inclui nome do cliente, valor formatado (R$) e data de vencimento em formato pt-BR. | Concluído |
+| Retornar estatísticas de quantos lembretes foram criados | O script regista em log as estatísticas `totalVerificado`, `lembreteCriados` e `jaExistiam`. | Concluído |
+| Procedure tRPC: `trpc.lembretes.criarLembretesBoletosVencendo` | O script chama exactamente `lembretes.criarLembretesBoletosVencendo` via HTTP POST. | Concluído |
 | Execução diária às 08:00 | O `scheduler.js` está configurado com a expressão `0 8 * * *` e fuso horário `America/Sao_Paulo`. | Concluído |
-| Retorno de estatísticas | O script regista em log as estatísticas devolvidas pela procedure tRPC. | Concluído |
-| Retry com backoff em caso de falha | O script realiza até `MAX_RETRIES` tentativas com atraso linear crescente antes de encerrar com erro. | Concluído |
-| Logging persistente em ficheiro | Logs gravados diariamente em `logs/lembretes-YYYY-MM-DD.log` e `logs/scheduler-YYYY-MM-DD.log`. | Concluído |
-| Modelo de variáveis de ambiente | Ficheiro `.env.example` com todas as variáveis documentadas e valores padrão. | Concluído |
-| Guia de implementação backend | Ficheiro `backend_implementation_guide.md` com exemplo completo em TypeScript + Prisma + tRPC. | Concluído |
 
 ## Fluxo de Execução
 
