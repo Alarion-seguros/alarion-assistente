@@ -21,6 +21,15 @@ import { router, protectedProcedure } from '../trpc';
 import { prisma } from '../prisma';
 
 export const lembretesRouter = router({
+  /**
+   * Procedure: trpc.lembretes.criarLembretesBoletosVencendo
+   * 
+   * 1. Busca todos os boletos não pagos que vencem exatamente em 7 dias
+   * 2. Para cada boleto encontrado, verifica se já existe um lembrete criado
+   * 3. Se não existir, cria um novo lembrete com título "Boleto [número] vence em 7 dias"
+   * 4. O lembrete inclui informações do cliente, valor e data de vencimento
+   * 5. Retorna estatísticas de quantos lembretes foram criados
+   */
   criarLembretesBoletosVencendo: protectedProcedure
     .mutation(async ({ ctx }) => {
       // 1. Calcular a data de vencimento alvo (daqui a 7 dias)

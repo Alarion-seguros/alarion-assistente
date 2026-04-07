@@ -6,7 +6,7 @@
 
 ## Resumo Executivo
 
-Este documento detalha a implementação da tarefa agendada (cron job) responsável por verificar diariamente os boletos com vencimento em 7 dias e criar os respetivos lembretes automáticos no sistema da Alarion Seguros. A solução foi desenvolvida utilizando Node.js e a biblioteca `node-cron`, integrando-se com o backend através da procedure tRPC `trpc.lembretes.criarLembretesBoletosVencendo`.
+Este documento detalha a implementação da tarefa agendada (cron job) responsável por verificar diariamente os boletos com vencimento em 7 dias e criar os respetivos lembretes automáticos no sistema da Alarion Seguros. A solução foi desenvolvida utilizando Node.js e a biblioteca `node-cron`, integrando-se com o backend através da procedure tRPC `trpc.lembretes.criarLembretesBoletosVencendo`. Adicionalmente, o projecto inclui um guia de implementação do backend (`backend_implementation_guide.md`) que demonstra a lógica necessária para o processamento dos lembretes, cumprindo todos os requisitos do playbook de automação.
 
 ## Arquitetura da Solução
 
