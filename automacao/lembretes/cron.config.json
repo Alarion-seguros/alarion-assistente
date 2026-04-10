@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "descricao": "Configuração da tarefa agendada para criação de lembretes de boletos vencendo em 7 dias",
+  "tarefas": [
+    {
+      "nome": "criarLembretesBoletosVencendo",
+      "descricao": "Verifica boletos não pagos com vencimento em 7 dias e cria lembretes automáticos para cada um, evitando duplicatas.",
+      "expressaoCron": "0 8 * * *",
+      "fusoHorario": "America/Sao_Paulo",
+      "script": "./criarLembretesBoletosVencendo.js",
+      "procedure": "trpc.lembretes.criarLembretesBoletosVencendo",
+      "ativo": true,
+      "variaveis_ambiente": {
+        "TRPC_BASE_URL"       : "URL base da API tRPC (obrigatória em produção)",
+        "TRPC_INTERNAL_TOKEN" : "Token de autenticação interno (obrigatório em produção)",
+        "TRPC_TIMEOUT_MS"     : "Timeout em ms para chamadas à API (padrão: 30000)",
+        "LOG_DIR"             : "Diretório para ficheiros de log (padrão: ./logs)",
+        "MAX_RETRIES"         : "Número máximo de tentativas em caso de falha (padrão: 3)",
+        "RETRY_DELAY_MS"      : "Atraso base entre tentativas em ms (padrão: 5000)"
+      },
+      "notas": [
+        "Executa diariamente às 08:00 no horário de Brasília (UTC-3).",
+        "A expressão '0 8 * * *' equivale a: minuto 0, hora 8, qualquer dia, qualquer mês, qualquer dia da semana.",
+        "Em servidores com UTC, ajustar para '0 11 * * *' (08:00 BRT = 11:00 UTC).",
+        "Variáveis de ambiente necessárias: TRPC_BASE_URL, TRPC_INTERNAL_TOKEN.",
+        "Em caso de falha transitória, o script realiza até MAX_RETRIES tentativas com backoff linear crescente.",
+        "Logs persistidos em ficheiros diários no diretório LOG_DIR (scheduler-YYYY-MM-DD.log e lembretes-YYYY-MM-DD.log).",
+        "Em caso de falha definitiva, o processo retorna exit code 1 para sinalização ao orquestrador."
+      ]
+    }
+  ]
+}
