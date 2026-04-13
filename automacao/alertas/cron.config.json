@@ -1,0 +1,26 @@
+{
+  "tasks": [
+    {
+      "name": "notificarAniversariantes",
+      "description": "Notificação diária de beneficiários que fazem aniversário no dia atual",
+      "script": "./notificarAniversariantes.js",
+      "procedure": "trpc.alertas.notificarAniversariantes",
+      "cron": "0 8 * * *",
+      "timezone": "America/Sao_Paulo",
+      "active": true,
+      "environment": {
+        "TRPC_BASE_URL": "http://localhost:3000/api/trpc",
+        "TRPC_TIMEOUT_MS": "30000",
+        "MAX_RETRIES": "3",
+        "RETRY_DELAY_MS": "5000"
+      },
+      "notes": [
+        "A procedure busca beneficiários cujo dia e mês de aniversário coincidem com a data atual.",
+        "Formata mensagem com lista de nomes e idades (ex: '• João Silva (25 anos)').",
+        "Envia notificação ao owner via notifyOwner() com título e conteúdo formatado.",
+        "Retorna { sucesso: boolean, total: number, mensagem: string }.",
+        "Se não houver aniversariantes, retorna mensagem 'Nenhum aniversariante hoje'."
+      ]
+    }
+  ]
+}
