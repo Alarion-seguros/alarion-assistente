@@ -18,3 +18,8 @@ logs/
 # Ficheiros de sistema
 .DS_Store
 Thumbs.db
+
+# Bot de Qualificação
+automacao/bot-qualificacao/node_modules/
+automacao/bot-qualificacao/data/*.xlsx
+automacao/bot-qualificacao/logs/*.log

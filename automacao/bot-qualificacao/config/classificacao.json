@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "descricao": "Regras editáveis de classificação (lead scoring) dos leads de planos de saúde. O bot soma os pontos de cada resposta e classifica o lead em 'Quente', 'Morno' ou 'Frio' conforme as faixas definidas em 'faixas'. Ajuste os pontos e as faixas conforme a estratégia comercial da Alarion.",
+
+  "pontuacao": {
+    "tipo_plano": {
+      "CNPJ": 30,
+      "Familiar": 20,
+      "Individual": 15
+    },
+    "possui_plano": {
+      "Sim": 25,
+      "Nao": 10
+    },
+    "quantidade_pessoas": [
+      { "min": 1, "max": 1, "pontos": 10 },
+      { "min": 2, "max": 3, "pontos": 20 },
+      { "min": 4, "max": 9, "pontos": 30 },
+      { "min": 10, "max": 999, "pontos": 40 }
+    ]
+  },
+
+  "faixas": [
+    { "classificacao": "Quente", "min": 70, "max": 999, "prioridade": "Alta",  "emoji": "🔥" },
+    { "classificacao": "Morno",  "min": 45, "max": 69,  "prioridade": "Média", "emoji": "🌤️" },
+    { "classificacao": "Frio",   "min": 0,  "max": 44,  "prioridade": "Baixa", "emoji": "❄️" }
+  ]
+}

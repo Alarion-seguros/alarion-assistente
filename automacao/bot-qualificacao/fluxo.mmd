@@ -1,0 +1,31 @@
+flowchart LR
+    A([Mensagem recebida<br/>no WhatsApp]) --> B[/Webhook Z-API<br/>POST /webhook/]
+    B --> C{Sessão<br/>existente?}
+    C -->|Não| D[Saudação +<br/>Pergunta 1: Nome]
+    C -->|Sim| E{Etapa atual}
+
+    E --> Q1[1 . Nome completo]
+    Q1 --> Q2[2 . Tipo de plano<br/>CNPJ / Individual / Familiar]
+    Q2 --> Q3[3 . Possui plano atual?<br/>Sim / Não]
+    Q3 --> Q4[4 . Quantas pessoas?]
+    Q4 --> Q5[5 . Bairro]
+
+    Q5 --> F[[Classificador<br/>Lead Scoring]]
+    F --> G{Pontuação}
+    G -->|>= 70| H1[🔥 Quente<br/>Prioridade Alta]
+    G -->|45 a 69| H2[🌤️ Morno<br/>Prioridade Média]
+    G -->|0 a 44| H3[❄️ Frio<br/>Prioridade Baixa]
+
+    H1 --> I[(Grava em Excel<br/>leads_qualificados.xlsx)]
+    H2 --> I
+    H3 --> I
+
+    I --> J([Mensagem de<br/>encerramento ao lead])
+
+    D -.resposta.-> K[/Envio via Z-API<br/>send-text/]
+    Q2 -.resposta.-> K
+    Q3 -.resposta.-> K
+    Q4 -.resposta.-> K
+    Q5 -.resposta.-> K
+    J -.resposta.-> K
+    K --> A

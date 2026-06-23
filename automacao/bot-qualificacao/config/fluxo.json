@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "descricao": "Configuração editável do fluxo de qualificação de leads de planos de saúde — Alarion Seguros. Edite livremente os textos, opções e a ordem das etapas. O bot lê este ficheiro a cada conversa, por isso alterações entram em vigor sem precisar mexer no código.",
+
+  "mensagens": {
+    "saudacao": "Olá! 👋 Sou o assistente virtual da *Alarion Seguros*. Vou fazer algumas perguntas rápidas para entender a sua necessidade de *plano de saúde* e encaminhar a melhor proposta. Vamos começar?",
+    "encerramento": "Perfeito, {nome}! ✅ Recebi todas as informações. Um dos nossos especialistas em planos de saúde vai entrar em contacto consigo em breve com as melhores opções. Obrigado!",
+    "opcao_invalida": "Desculpe, não entendi a sua resposta. Por favor, escolha uma das opções enviando o *número* correspondente.",
+    "reinicio": "Vamos recomeçar a sua qualificação do início. 🙂",
+    "ja_finalizado": "A sua qualificação já foi concluída e enviada à nossa equipa. Se quiser recomeçar, escreva *reiniciar*."
+  },
+
+  "etapas": [
+    {
+      "id": "nome",
+      "campo": "nome",
+      "tipo": "texto",
+      "pergunta": "Para começar, qual é o seu *nome completo*?",
+      "obrigatorio": true
+    },
+    {
+      "id": "tipo_plano",
+      "campo": "tipo_plano",
+      "tipo": "opcoes",
+      "pergunta": "Que *tipo de plano de saúde* procura?",
+      "obrigatorio": true,
+      "opcoes": [
+        { "valor": "CNPJ", "rotulo": "CNPJ (Empresarial / PME)" },
+        { "valor": "Individual", "rotulo": "Individual" },
+        { "valor": "Familiar", "rotulo": "Familiar" }
+      ]
+    },
+    {
+      "id": "possui_plano",
+      "campo": "possui_plano",
+      "tipo": "opcoes",
+      "pergunta": "Atualmente, *já possui um plano de saúde*?",
+      "obrigatorio": true,
+      "opcoes": [
+        { "valor": "Sim", "rotulo": "Sim" },
+        { "valor": "Nao", "rotulo": "Não" }
+      ]
+    },
+    {
+      "id": "quantidade_pessoas",
+      "campo": "quantidade_pessoas",
+      "tipo": "numero",
+      "pergunta": "Quantas *pessoas* vão entrar no plano? (envie apenas o número, ex.: 3)",
+      "obrigatorio": true,
+      "min": 1,
+      "max": 999
+    },
+    {
+      "id": "bairro",
+      "campo": "bairro",
+      "tipo": "texto",
+      "pergunta": "Por fim, em que *bairro* (e cidade, se quiser) reside ou pretende utilizar o plano?",
+      "obrigatorio": true
+    }
+  ],
+
+  "comandos_globais": {
+    "reiniciar": ["reiniciar", "recomecar", "recomeçar", "começar de novo", "comecar de novo"]
+  }
+}

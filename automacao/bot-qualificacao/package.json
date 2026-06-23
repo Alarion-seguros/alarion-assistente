@@ -1,0 +1,19 @@
+{
+  "name": "alarion-bot-qualificacao",
+  "version": "1.0.0",
+  "description": "Bot de qualificação de leads de planos de saúde para WhatsApp via Z-API, com gravação em Excel — Alarion Seguros",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node test/simular.js"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}
